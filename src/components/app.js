@@ -2,55 +2,43 @@ import 'materialize-css/dist/css/materialize.min.css';
 import 'materialize-css/dist/js/materialize.min';
 import '../assets/css/app.scss';
 import React, { Component } from 'react';
+import axios from 'axios';
 import AddStudent from './add_student';
 import StudentTable from './students_table';
-import studentData from '../dummy_data/student_list';
-
-
-let id = 100;
+import studentData from '../dummy_data/student_list';  //after communicating w/ server, no need to use dummy data
 
 class App extends Component {
 
     // update component state with the student data - to avoid error, set default state to the object
     state = {
-        students: []
+        students: [],
+        error: ''
     }
 
-    addStudent = (student) => {
+    addStudent = async (student) => {
+        await axios.post('/api/grades', student);
+        this.getStudentData();
+    }
 
-        student.id = id++;
-
-        this.setState({
-            students: [...this.state.students, student]
-        });
+    deleteStudent = async (id) => {
+        await axios.delete(`/api/grades/${id}`);
+        this.getStudentData();
     }
 
     componentDidMount() {
         this.getStudentData();
     }
 
-    getStudentData() {
+    async getStudentData() {
         // call server here to get data
-        this.setState({
-            students: studentData
-        });
-    }
-
-    deleteStudent=(id)=>{
-        const studentsCopy = this.state.students.slice();
-
-        //const index = studentsCopy.indexOf(id);   //indexOf does not work for array of objects
-        //console.log('Found Index: ', index);   // always return -1
-
-        const index = studentsCopy.findIndex((student) => {
-           return student.id === id;
-        });
-
-        if (index >= 0){
-            studentsCopy.splice(index, 1);
+        try {
+            // const resp = await axios.get('http://localhost:3001/api/grades');
+            const resp = await axios.get('/api/grades');
             this.setState({
-                students: [...studentsCopy]
-            })
+                students: resp.data.data
+            });
+        } catch(err){
+            console.log('Error getting data:', err.message);
         }
     }
 
@@ -58,6 +46,7 @@ class App extends Component {
         return (
             <div>
                 <h1 className="center">React SGT</h1>
+                <h5 className = "red-text text-darken-2"></h5>
                 <div className="row">
                     <StudentTable col="s12 m8" delete={this.deleteStudent} list={this.state.students}/>
                     <AddStudent col="s12 m4" add={this.addStudent}/>
